@@ -12,7 +12,6 @@ import csv
 from mobile_insight.monitor import OfflineReplayer, OnlineMonitor
 
 from dl_mac_latency_offline_analyzer import DLMacLatencyAnalyzer
-from dl_mac_latency_offline_analyzer2 import DLMacLatencyAnalyzer2
 
 def kpi_analysis():
 
@@ -21,10 +20,7 @@ def kpi_analysis():
     src.set_input_path(sys.argv[1])
 
     analyzer = DLMacLatencyAnalyzer()
-    
-    
-    
-     
+      
     analyzer.set_source(src) 
     src.run()
 
@@ -32,8 +28,7 @@ def kpi_analysis():
     analyzer.log_info('Number of TX delay: '+str(analyzer.tx_delay_num))
 
     analyzer.log_info('Number of blocked packets: '+str(analyzer.block_delay_num))
-    
-        
+          
     
     # print analyzer.blocked_pkts
     
