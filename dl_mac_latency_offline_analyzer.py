@@ -45,15 +45,16 @@ class DLMacLatencyAnalyzer(Analyzer):
         self.waiting_sn = -1   # maintain the SN waitting for
         self.waiting_time = 0  # the wait time for expected SN
 
-        self.num = 0
+        self.num = 1
+        self.rx_delay_num = 0
         self.tx_delay_num = 0
         self.block_delay_num = 0
        
         # decide wthether enable the PDCP data to generate the refered file
         self.verfiy = False
         # decide whether print some values for debugging in rlc part or not
-        self.rlc_debug = True
-        self.pdsch_debug = True
+        self.rlc_debug = False
+        self.pdsch_debug = False
        
     def set_source(self, source):
         """
@@ -67,7 +68,7 @@ class DLMacLatencyAnalyzer(Analyzer):
         if self.verfiy:
             source.enable_log("LTE_PDCP_DL_Cipher_Data_PDU")
         else:
-            # source.enable_log("LTE_RLC_DL_AM_All_PDU")
+            source.enable_log("LTE_RLC_DL_AM_All_PDU")
             source.enable_log("LTE_PHY_PDSCH_Stat_Indication")
         
     def enable_mapping(self):
@@ -162,7 +163,7 @@ class DLMacLatencyAnalyzer(Analyzer):
                             
                             if self.rlc_debug:
                                 print '--------'
-                                print cur_sys_time,sys_time
+                                print cur_sys_time,sys_time, 'Total PDU bytes(included log)', pdu['pdu_bytes']
                                 
                             #Data start Transmitting, Sequence Number(SN) should arrive in increasing sequence from 0 to 1023
                             if SN == 0 and len(self.rlc_pdu_pkt) == 0:
@@ -225,16 +226,31 @@ class DLMacLatencyAnalyzer(Analyzer):
 
                                 # combine the remained right size of SN
                                 # may have to commbine multiple {SN, list} pairs
+                                first_attempt_time = sys_time
+                                if len(lists) != 0:
+                                    if self.pdsch_rx.has_key(sys_time):
+                                        if self.rlc_debug:
+                                            print "RX Found:", sys_time, "->", self.pdsch_rx[sys_time]
+                                        first_attempt_time = self.pdsch_rx[sys_time]
                                 while len(lists) != 0:
-                                    if lists[0][0] == '00':
+                                    if lists[0][0] == '00': 
                                         
                                         tx_delay = cur_sys_time-lists[0][2]
-                                        
-                                        self.num += 1
                                         if tx_delay > 0:
                                             self.tx_delay_num += 1
-                                        self.log_info(str(self.num)+' PDU SIZE:'+str(lists[0][1])+' TX DELAY: '+str(tx_delay)+' Start: '+str(lists[0][2]%10240)+' End: '+str(cur_sys_time%10240))
-                                        print str(self.num)+' PDU SIZE:'+str(lists[0][1])+' TX DELAY: '+str(tx_delay)+' Start: '+str(lists[0][2]%10240)+' End: '+str(cur_sys_time%10240)
+                                        # determine if there is a Re-transmitting delay
+                                        # handle the cycling SN issue by setting a rule of thumb threshold
+                                        if first_attempt_time != sys_time and (lists[0][2]%10240-first_attempt_time)%10204 < 100:
+                                            rx_delay = (lists[0][2]%10240-first_attempt_time)%10204
+                                            if rx_delay > 0:
+                                                self.rx_delay_num += 1
+                                            self.log_info(str(self.num)+' PDU SIZE:'+str(lists[0][1])+' RX delay: '+str(rx_delay)+' TX DELAY: '+str(tx_delay)+' Start: '+str(first_attempt_time)+' End: '+str(cur_sys_time%10240))
+                                            print str(self.num)+' PDU SIZE:'+str(lists[0][1])+' RX delay: '+str(rx_delay)+' TX DELAY: '+str(tx_delay)+' Start: '+str(first_attempt_time)+' End: '+str(cur_sys_time%10240)                                            
+                                           
+                                        else:
+                                            self.log_info(str(self.num)+' PDU SIZE:'+str(lists[0][1])+' TX DELAY: '+str(tx_delay)+' Start: '+str(lists[0][2]%10240)+' End: '+str(cur_sys_time%10240))
+                                            print str(self.num)+' PDU SIZE:'+str(lists[0][1])+' TX DELAY: '+str(tx_delay)+' Start: '+str(lists[0][2]%10240)+' End: '+str(cur_sys_time%10240)
+                                        self.num += 1
                                         lists.pop(0)
                                     else:
                                         break
@@ -295,7 +311,6 @@ class DLMacLatencyAnalyzer(Analyzer):
                                     if len(next_list)==0:
                                         del self.rlc_pdu_pkt[next_SN%1024]
                                     next_SN = (next_SN+1)%1024
-
 
                                 self.waiting_sn = next_SN
                                 self.waiting_time = 0
