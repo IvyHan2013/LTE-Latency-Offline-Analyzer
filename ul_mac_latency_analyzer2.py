@@ -236,70 +236,70 @@ class UlMacLatencyAnalyzer2(Analyzer):
                 # print log_item['Subpackets']
                 # self.bytes4 += log_item['Subpackets'][0]['SubPacket Size']
                 for pkt in log_item['Subpackets'][0]['Samples']:
-                    print pkt
-                #     grant = pkt['Grant (bytes)']
-                #     harq_id = pkt['HARQ ID']
-                #     HDR = pkt['HDR LEN']
-                #     pkt_size = grant - HDR
-                #     self.trans_size += pkt_size
-                #     fn = int(pkt['SFN'])
-                #     sfn = int(pkt['Sub-FN'])
+                    # print pkt
+                    grant = pkt['Grant (bytes)']
+                    harq_id = pkt['HARQ ID']
+                    HDR = pkt['HDR LEN']
+                    pkt_size = grant - HDR
+                    self.trans_size += pkt_size
+                    fn = int(pkt['SFN'])
+                    sfn = int(pkt['Sub-FN'])
                     
-                #     BSR_trig = pkt['BSR trig']
-                #     if 'S-BSR' in BSR_trig:
-                #         pkt_size -= 1
-                #     elif 'L-BSR' in BSR_trig:
-                #         pkt_size -= 3
+                    BSR_trig = pkt['BSR trig']
+                    if 'S-BSR' in BSR_trig:
+                        pkt_size -= 1
+                    elif 'L-BSR' in BSR_trig:
+                        pkt_size -= 3
 
-                #     try:
-                #         cell_id = int(pkt['Cell Id'])
-                #     except KeyError:
-                #         cell_id = 0
-                #     print "Transfer", pkt['BSR event'],self.cnt2, log_item['timestamp'], fn *10 + sfn, pkt_size
-                #     sys_time = fn*10 + sfn
-                #     round_sys_time = self.round*10240 + sys_time
-                #     if self.send_dict.has_key(round_sys_time):
-                #         print "Ensure: transfer:", pkt_size, "buffer:", self.send_dict[round_sys_time]
-                #     # print sorted(self.send_dict.keys())
-                #     for key in sorted(self.send_dict.keys()):
+                    try:
+                        cell_id = int(pkt['Cell Id'])
+                    except KeyError:
+                        cell_id = 0
+                    print "Transfer", pkt['BSR event'],self.cnt2, log_item['timestamp'], fn *10 + sfn, pkt_size
+                    sys_time = fn*10 + sfn
+                    round_sys_time = self.round*10240 + sys_time
+                    if self.send_dict.has_key(round_sys_time):
+                        print "Ensure: transfer:", pkt_size, "buffer:", self.send_dict[round_sys_time]
+                    # print sorted(self.send_dict.keys())
+                    for key in sorted(self.send_dict.keys()):
                         
-                #         if key <= round_sys_time:
-                #             sent_bytes = self.send_dict[key]
-                #             print "key",key,"value",sent_bytes
+                        if key <= round_sys_time:
+                            sent_bytes = self.send_dict[key]
+                            print "key",key,"value",sent_bytes
                             
-                #             while len(self.buffer_backup) > 0 and sent_bytes > 0:
+                            while len(self.buffer_backup) > 0 and sent_bytes > 0:
                                 
-                #                 pkt = self.buffer_backup[0]
+                                pkt = self.buffer_backup[0]
                                 
-                #                 if len(pkt) == 2:
-                #                     pkt.append(key % 10240)
-                #                     pkt.append(pkt[1])
+                                if len(pkt) == 2:
+                                    pkt.append(key % 10240)
+                                    pkt.append(pkt[1])
                                 
-                #                 if pkt[1] <= sent_bytes:
-                #                     # totally send
-                #                     pkt_delay = (key%10240- pkt[0])%10240
-                #                     wait_delay = (key%10240- pkt[2])%10240
+                                if pkt[1] <= sent_bytes:
+                                    # totally send
+                                    pkt_delay = (key%10240- pkt[0])%10240
+                                    wait_delay = (key%10240- pkt[2])%10240
 
-                #                     self.buffer_backup.pop(0)
-                #                     sent_bytes -= pkt[1]
+                                    self.buffer_backup.pop(0)
+                                    sent_bytes -= pkt[1]
                                     
-                #                     ul_latency_dict = {}
-                #                     ul_latency_dict['timestamp'] = key%10240
-                #                     ul_latency_dict['size'] = pkt
-                #                     ul_latency_dict['latency'] = str(pkt_delay)
+                                    ul_latency_dict = {}
+                                    ul_latency_dict['timestamp'] = key%10240
+                                    ul_latency_dict['size'] = pkt
+                                    ul_latency_dict['latency'] = str(pkt_delay)
 
-                #                     self.broadcast_info('UL_LAT', ul_latency_dict)
-                #                     self.log_info("Should bcast")
+                                    self.broadcast_info('UL_LAT', ul_latency_dict)
+                                    self.log_info("Should bcast")
 
-                #                     self.log_info("B:Send Packet: " + str(log_item['timestamp']) + " " + str(key%10240)  + "Packet Size: "  + str(pkt[3]) + "Packet Delay: " + str(pkt_delay) + "Wait Delay: " + str(wait_delay))
-                #                     print "B:Send Packet: " + str(log_item['timestamp']) + " " +  str(key%10240) + "Packet Size: "  + str(pkt[3]) + "Packet Delay: " + str(pkt_delay) + "Wait Delay: " + str(wait_delay)
-                #                     print "-----"*10
-                #                 else:
-                #                     pkt[1] -= sent_bytes
-                #                     sent_bytes = 0
+                                    self.log_info("B:Send Packet: " + str(log_item['timestamp']) + " " + str(key%10240)  + "Packet Size: "  + str(pkt[3]) + "Packet Delay: " + str(pkt_delay) + "Wait Delay: " + str(wait_delay))
+                                    print "B:Send Packet: " + str(log_item['timestamp']) + " " +  str(key%10240) + "Packet Size: "  + str(pkt[3]) + "Packet Delay: " + str(pkt_delay) + "Wait Delay: " + str(wait_delay)
+                                    print "-----"*10
+                                else:
+                                    pkt[1] -= sent_bytes
+                                    sent_bytes = 0
                                 
 
-                #             del self.send_dict[key]
+                            del self.send_dict[key]
 
 
         elif msg.type_id == "LTE_PDCP_UL_Cipher_Data_PDU":

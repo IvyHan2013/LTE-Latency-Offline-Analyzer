@@ -2,6 +2,19 @@
 
 ## Downlink Analyzer
 
+
+Analyzer code in: **dl_mac_latency_offline_analyzer.py**
+
+### Usage
+```
+python offline_downlink.py [logfile name]
+```
+
+example:
+```
+python offline_downlink.py exp72.mi2log
+```
+
 ### Issues:
 
 #### 1. Using PDSCH to get the first attempt transmitting time:
@@ -14,3 +27,20 @@ In this version, it will only try to find the *first attempt transmit* time when
 #### 2. Lose data record:
     - Possible solution:
         1.    waiting_time: if the waiting time is larger than a threshold, we consider this record is lost. ***problem of this solution:*** it is difficult to determine the threshold, since sometime it will really take a long time to get the expected arriving SN. 
+
+
+
+## Uplink Analyzer
+
+
+Analyzer code in: **ul_rlc_analyzer.py**
+
+### Usage
+```
+python offline_uplink.py [logfile name]
+```
+
+example:
+```
+python offline_uplink.py exp72.mi2log
+```
