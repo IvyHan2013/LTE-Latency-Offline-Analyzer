@@ -15,6 +15,13 @@ example:
 python offline_downlink.py exp72.mi2log
 ```
 
+Used for get the time of the first transmitting 
+        if msg.type_id == "LTE_PHY_PDSCH_Stat_Indication":
+
+### Message type:
+ 1.  `msg.type_id == "LTE_PHY_PDSCH_Stat_Indication"` Used for get the time of the first transmitting, mainly for handling retransmit
+ 2.  `msg.type_id == "LTE_RLC_DL_AM_All_PDU"`: Used for connecting rlc packet into pdu and calculating the delay time 
+ 3.  `msg.type_id == "LTE_PDCP_DL_Cipher_Data_PDU"`: Used for verifying, the packet size calculated by 2 should match with the result from these.
 ### Issues:
 
 #### 1. Using PDSCH to get the first attempt transmitting time:
