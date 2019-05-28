@@ -51,8 +51,8 @@ class UlMacLatencyOfflineAnalyzer(Analyzer):
 
         # Phy-layer logs
         source.enable_log("LTE_MAC_UL_Buffer_Status_Internal")
-        # source.enable_log("LTE_MAC_UL_Transport_Block")
-        # source.enable_log("LTE_PDCP_UL_Cipher_Data_PDU")
+        source.enable_log("LTE_MAC_UL_Transport_Block")
+        source.enable_log("LTE_PDCP_UL_Cipher_Data_PDU")
         
     def enable_mapping(self):
         self.mapping = True
@@ -113,32 +113,32 @@ class UlMacLatencyOfflineAnalyzer(Analyzer):
                             increase_bytes = total_bytes - self.buffer_bytes
                             # print str(self.mac_cur_fn + self.mac_round*10240)+','+str(increase_bytes)
                             # if sys_time < 10240:
-                                # print str(self.mac_cur_fn)+','+str(increase_bytes),str(log_item['timestamp']),sys_time
+                            #     print str(self.mac_cur_fn)+','+str(increase_bytes),str(log_item['timestamp']),sys_time
                             
                             self.receive_buffer.append([increase_bytes,self.mac_cur_fn+10240*self.mac_round])
                             self.mac_ts_dict[increase_bytes] = self.mac_cur_fn + self.mac_round*10240
 
 
                         elif total_bytes < self.buffer_bytes:
-                            print str(self.mac_cur_fn +self.mac_round*10240) +','+ str(self.buffer_bytes - total_bytes)
+                            # print str(self.mac_cur_fn +self.mac_round*10240) +','+ str(self.buffer_bytes - total_bytes)
                             send_bytes = self.buffer_bytes - total_bytes
                             self.send_buffer.append([send_bytes,self.mac_cur_fn+10240*self.mac_round])
 
-                            # while len(self.mac_pdu) > 0 and send_bytes > 0:
-                            #     pkt = self.mac_pdu[0]
-                            #     # cur size, recieve time, orginal size, send time
-                            #     if pkt[0] <= send_bytes:
-                            #         #totaly send
-                            #         pkt_delay = (self.mac_cur_fn - pkt[1])% 10240
-                            #         wait_delay = (self.mac_cur_fn - pkt[3]) % 10240
+                            while len(self.mac_pdu) > 0 and send_bytes > 0:
+                                pkt = self.mac_pdu[0]
+                                # cur size, recieve time, orginal size, send time
+                                if pkt[0] <= send_bytes:
+                                    #totaly send
+                                    pkt_delay = (self.mac_cur_fn - pkt[1])% 10240
+                                    wait_delay = (self.mac_cur_fn - pkt[3]) % 10240
 
-                            #         self.mac_pdu.pop(0)
-                            #         send_bytes -= pkt[0]
-                            #         print "Send Packet: " + str(log_item['timestamp']) + " " +  str(self.mac_cur_fn) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
-                            #         print "-----"*10
-                            #     else:
-                            #         pkt[0] -= send_bytes
-                            #         send_bytes = 0
+                                    self.mac_pdu.pop(0)
+                                    send_bytes -= pkt[0]
+                                    print "Send Packet: " + str(log_item['timestamp']) + " " +  str(self.mac_cur_fn) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
+                                    print "-----"*10
+                                else:
+                                    pkt[0] -= send_bytes
+                                    send_bytes = 0
                                     
                                     
                         
@@ -174,71 +174,72 @@ class UlMacLatencyOfflineAnalyzer(Analyzer):
                         print str(pdu_size)+','+str(self.pdcp_cur_fn+ 10240*self.pdcp_round)+',-1'
                     self.pdcp_pdu.append([pdu_size,self.pdcp_cur_fn + 10240*self.pdcp_round])
                     # find the place pdu recived
-                    # while len(self.pdcp_pdu) > 0 and len(self.receive_buffer) > 0:
-                    #     pdu = self.pdcp_pdu[0]
-                    #     recieve = self.receive_buffer[0]
+                    while len(self.pdcp_pdu) > 0 and len(self.receive_buffer) > 0:
+                        pdu = self.pdcp_pdu[0]
+                        recieve = self.receive_buffer[0]
                         
-                    #     if recieve[0] < pdu[0]:
-                    #         self.receive_buffer.remove(recieve)
-                    #         # print "pkt recieve at",recieve[1],pdu[0], pdu[1]
-                    #         # print "smaller size", recieve
-                    #         # self.mac_pdu.append([pdu[0],recieve[1],pdu[0],pdu[1]])                            
-                    #         # self.pdcp_pdu.remove(pdu) 
-                    #         # self.receive_buffer.remove(recieve)
-                    #         # send_bytes = pdu[0]-recieve[0]
-                    #         # while len(self.mac_pdu) > 0 and send_bytes > 0:
-                    #         #     pkt = self.mac_pdu[0]
-                    #         #     # cur size, recieve time, orginal size, send time
-                    #         #     if pkt[0] <= send_bytes:
-                    #         #         #totaly send
-                    #         #         pkt_delay = (self.mac_cur_fn - pkt[1])% 10240
-                    #         #         wait_delay = (self.mac_cur_fn - pkt[3]) % 10240
+                        if recieve[0] < pdu[0]:
+                            self.receive_buffer.remove(recieve)
+                            print "pkt recieve at",recieve[1],pdu[0], pdu[1]
+                            print "smaller size", recieve
+                            self.mac_pdu.append([pdu[0],recieve[1],pdu[0],pdu[1]])                            
+                            self.pdcp_pdu.remove(pdu) 
+                            if recieve in self.receive_buffer:
+                                self.receive_buffer.remove(recieve)
+                            send_bytes = pdu[0]-recieve[0]
+                            while len(self.mac_pdu) > 0 and send_bytes > 0:
+                                pkt = self.mac_pdu[0]
+                                # cur size, recieve time, orginal size, send time
+                                if pkt[0] <= send_bytes:
+                                    #totaly send
+                                    pkt_delay = (self.mac_cur_fn - pkt[1])% 10240
+                                    wait_delay = (self.mac_cur_fn - pkt[3]) % 10240
 
-                    #         #         self.mac_pdu.pop(0)
-                    #         #         send_bytes -= pkt[0]
-                    #         #         print "Send Packet: " + str(log_item['timestamp']) + " " +  str(self.mac_cur_fn) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
-                    #         #         print "-----"*10
-                    #         #     else:
-                    #         #         pkt[0] -= send_bytes
-                    #         #         send_bytes = 0
-                    #         #         print "pkt display",pkt
+                                    self.mac_pdu.pop(0)
+                                    send_bytes -= pkt[0]
+                                    print "Send Packet: " + str(log_item['timestamp']) + " " +  str(self.mac_cur_fn) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
+                                    print "-----"*10
+                                else:
+                                    pkt[0] -= send_bytes
+                                    send_bytes = 0
+                                    print "pkt display",pkt
                             
 
-                    #     else:
-                    #     #TODO: if the buffer did not increase before recieve pdcp
+                        else:
+                        #TODO: if the buffer did not increase before recieve pdcp
                             
-                    #         print "pkt recieve at:",recieve[1],pdu[0], pdu[1]
-                    #         recieve[0] -= pdu[0]
-                    #         self.mac_pdu.append([pdu[0],recieve[1],pdu[0],pdu[1]])
-                    #         self.pdcp_pdu.remove(pdu)
-                    #         print self.mac_pdu[len(self.mac_pdu)-1]
-                    #         print recieve
-                    #         print pdu
+                            print "pkt recieve at:",recieve[1],pdu[0], pdu[1]
+                            recieve[0] -= pdu[0]
+                            self.mac_pdu.append([pdu[0],recieve[1],pdu[0],pdu[1]])
+                            self.pdcp_pdu.remove(pdu)
+                            print self.mac_pdu[len(self.mac_pdu)-1]
+                            print recieve
+                            print pdu
 
-                    #     while len(self.send_buffer) > 0 and len(self.mac_pdu) > 0 :
-                    #         # print "send buffer", self.send_buffer
-                    #         send_info = self.send_buffer.pop(0)
-                    #         send_bytes = send_info[0]
-                    #         send_ts = send_info[1]
-                    #         if send_ts < self.mac_pdu[0][3]:
-                    #             continue
-                    #         while len(self.mac_pdu) > 0 and send_bytes > 0:
-                    #             pkt = self.mac_pdu[0]
+                        while len(self.send_buffer) > 0 and len(self.mac_pdu) > 0 :
+                            # print "send buffer", self.send_buffer
+                            send_info = self.send_buffer.pop(0)
+                            send_bytes = send_info[0]
+                            send_ts = send_info[1]
+                            if send_ts < self.mac_pdu[0][3]:
+                                continue
+                            while len(self.mac_pdu) > 0 and send_bytes > 0:
+                                pkt = self.mac_pdu[0]
                                 
-                    #             # cur size, recieve time, orginal size, send time
-                    #             if pkt[0] <= send_bytes:
-                    #                 #totaly send
-                    #                 pkt_delay = (send_ts - pkt[1])% 10240
-                    #                 wait_delay = (send_ts - pkt[3]) % 10240
+                                # cur size, recieve time, orginal size, send time
+                                if pkt[0] <= send_bytes:
+                                    #totaly send
+                                    pkt_delay = (send_ts - pkt[1])% 10240
+                                    wait_delay = (send_ts - pkt[3]) % 10240
 
-                    #                 self.mac_pdu.pop(0)
-                    #                 send_bytes -= pkt[0]
-                    #                 print "Send Packet: " + str(log_item['timestamp']) + " " +  str(send_ts) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
-                    #                 print "-----"*10
-                    #                 print "pkt",pkt
-                    #             else:
-                    #                 pkt[0] -= send_bytes
-                    #                 send_bytes = 0
+                                    self.mac_pdu.pop(0)
+                                    send_bytes -= pkt[0]
+                                    print "Send Packet: " + str(log_item['timestamp']) + " " +  str(send_ts) + " Packet Size: "  + str(pkt[2]) + " Packet Delay: " + str(pkt_delay) + " Wait Delay: " + str(wait_delay)
+                                    print "-----"*10
+                                    print "pkt",pkt
+                                else:
+                                    pkt[0] -= send_bytes
+                                    send_bytes = 0
                             
                             
                     

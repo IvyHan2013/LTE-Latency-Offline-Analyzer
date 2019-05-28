@@ -78,6 +78,7 @@ class UlRLCAnalyzer(Analyzer):
         print('Hello Timer!')
 
     def __msg_callback(self, msg):
+        # fake online analysis
         if self.count > 100:
             # self.log_info("here")
             # print "here"
